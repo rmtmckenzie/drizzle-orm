@@ -27,8 +27,12 @@ import {
 	notLike,
 	or,
 } from './sql/expressions/index.ts';
-import { type Placeholder, SQL, sql } from './sql/sql.ts';
+import { type Placeholder, SQL, sql, type ColumnsSelection } from './sql/sql.ts';
 import type { Assume, ColumnsWithTable, Equal, Simplify, ValueOrArray } from './utils.ts';
+import type { MySqlTable } from './mysql-core/table.ts';
+import type { Subquery } from './subquery.ts';
+import type { JoinType } from './query-builders/select.types.ts';
+import type { MySqlViewBase } from './mysql-core/view-base.ts';
 
 export abstract class Relation<TTableName extends string = string> {
 	static readonly [entityKind]: string = 'Relation';
@@ -212,6 +216,7 @@ export type DBQueryConfig<
 	TIsRoot extends boolean = boolean,
 	TSchema extends TablesRelationalConfig = TablesRelationalConfig,
 	TTableConfig extends TableRelationalConfig = TableRelationalConfig,
+	TSelection extends ColumnsSelection = ColumnsSelection,
 > =
 	& {
 		columns?: {
@@ -240,6 +245,15 @@ export type DBQueryConfig<
 				operators: { sql: Operators['sql'] },
 			) => Record<string, SQL.Aliased>);
 	}
+	& (TIsRoot extends true ? {
+		joins?: [
+			{
+				table: MySqlTable | Subquery | MySqlViewBase | SQL,
+				on: ((aliases: TSelection) => SQL | undefined) | SQL | undefined,
+				type: JoinType,
+			}
+		]
+	}: {})
 	& (TRelationType extends 'many' ? 
 			& {
 				where?:
