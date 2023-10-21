@@ -53,7 +53,8 @@ jobs:
           old_version="$(jq -r .version package.json)"
           version="$old_version-$(git rev-parse --short HEAD)"
           echo "Publishing @rmtmckenzie/drizzle-orm using version $version"
-          npm publish --tag $version
+          npm version $version
+          npm publish
         working-directory: ./drizzle-orm/dist
         shell: bash
         env:
