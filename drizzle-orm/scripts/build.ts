@@ -56,7 +56,7 @@ await cpy('dist-dts/**/*.d.ts', 'dist.new', {
 });
 await cpy('dist-dts/**/*.d.ts', 'dist.new');
 fs.removeSync('dist-dts');
-fs.copySync('../README.md', 'dist.new/README.md');
+// fs.copySync('../README.md', 'dist.new/README.md');
 updateAndCopyPackageJson();
 fs.removeSync('dist');
 fs.renameSync('dist.new', 'dist');
