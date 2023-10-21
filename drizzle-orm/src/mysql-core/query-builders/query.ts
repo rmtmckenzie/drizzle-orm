@@ -114,7 +114,7 @@ export class MySqlRelationalQuery<
 				table: this.table,
 				tableConfig: this.tableConfig,
 				queryConfig: this.config,
-				tableAlias: this.tableConfig.tsName,
+				// tableAlias: this.tableConfig.tsName,
 			})
 			: this.dialect.buildRelationalQuery({
 				fullSchema: this.fullSchema,
