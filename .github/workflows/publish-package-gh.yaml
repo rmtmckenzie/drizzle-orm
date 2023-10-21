@@ -49,11 +49,11 @@ jobs:
           registry-url: https://npm.pkg.github.com/
         
       - run: |
-          echo "Publishing drizzle-orm@$tag using version $version"
           old_version="$(jq -r .version package.json)"
           version="$old_version-$(git rev-parse --short HEAD)"
           tag="${{ github.ref_name }}"
-          npm publish -- --tag tag
+          echo "Publishing drizzle-orm@$tag using version $version"
+          npm publish -- --tag $tag
         working-directory: ./drizzle-orm/dist
         shell: bash
         env:
