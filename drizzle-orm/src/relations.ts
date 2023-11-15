@@ -1,11 +1,12 @@
 import { type AnyTable, type InferModelFromColumns, isTable, Table } from '~/table.ts';
 import { type AnyColumn, Column } from './column.ts';
 import { entityKind, is } from './entity.ts';
-import { PrimaryKeyBuilder } from './pg-core/primary-keys.ts';
+import { PrimaryKeyBuilder } from './pg-core/index.ts';
 import {
 	and,
 	asc,
 	between,
+	type ColumnsSelection,
 	desc,
 	eq,
 	exists,
@@ -26,9 +27,11 @@ import {
 	notInArray,
 	notLike,
 	or,
-} from './sql/expressions/index.ts';
-import { type Placeholder, SQL, sql, type ColumnsSelection } from './sql/sql.ts';
-import type { Assume, ColumnsWithTable, Equal, Simplify, ValueOrArray } from './utils.ts';
+	type Placeholder,
+	SQL,
+	sql,
+} from './sql/index.ts';
+import { type Assume, type ColumnsWithTable, type Equal, type Simplify, type ValueOrArray } from './utils.ts';
 import type { MySqlTable } from './mysql-core/table.ts';
 import type { Subquery } from './subquery.ts';
 import type { JoinType } from './query-builders/select.types.ts';
@@ -289,7 +292,6 @@ export interface TableRelationalConfig {
 	columns: Record<string, Column>;
 	relations: Record<string, Relation>;
 	primaryKey: AnyColumn[];
-	schema?: string;
 }
 
 export type TablesRelationalConfig = Record<string, TableRelationalConfig>;
@@ -450,7 +452,6 @@ export function extractTablesRelationalConfig<
 			tablesConfig[key] = {
 				tsName: key,
 				dbName: value[Table.Symbol.Name],
-				schema: value[Table.Symbol.Schema],
 				columns: value[Table.Symbol.Columns],
 				relations: bufferedRelations?.relations ?? {},
 				primaryKey: bufferedRelations?.primaryKey ?? [],
