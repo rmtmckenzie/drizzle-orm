@@ -833,8 +833,8 @@ export class MySqlDialect {
 						? selectedColumns.filter((c) => config.columns?.[c] === true)
 						: Object.keys(tableConfig.columns).filter((key) => !selectedColumns.includes(key));
 				}
-			} else {
-				// Select all columns if selection is not specified
+			} else if (!config.with) {
+				// Select all columns if selection or with are not specified
 				selectedColumns = Object.keys(tableConfig.columns);
 			}
 
