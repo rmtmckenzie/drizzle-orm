@@ -249,13 +249,11 @@ export type DBQueryConfig<
 			) => Record<string, SQL.Aliased>);
 	}
 	& (TIsRoot extends true ? {
-		joins?: [
-			{
-				table: MySqlTable | Subquery | MySqlViewBase | SQL,
-				on: ((aliases: TSelection) => SQL | undefined) | SQL,
-				type: JoinType,
-			}
-		]
+		joins?:{
+			table: MySqlTable | Subquery | MySqlViewBase | SQL,
+			on: ((aliases: TSelection) => SQL | undefined) | SQL,
+			type: JoinType,
+		}[]
 	}: {})
 	& (TRelationType extends 'many' ? 
 			& {
