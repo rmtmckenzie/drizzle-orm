@@ -13,6 +13,7 @@ import type { KnownKeysOnly } from '~/utils.ts';
 import type { MySqlDialect } from '../dialect.ts';
 import type { Mode, MySqlSession, PreparedQueryConfig, PreparedQueryHKTBase, PreparedQueryKind } from '../session.ts';
 import type { MySqlTable } from '../table.ts';
+import { IsAlias } from '~/table.ts';
 
 export class RelationalQueryBuilder<
 	TPreparedQueryHKT extends PreparedQueryHKTBase,
@@ -114,7 +115,7 @@ export class MySqlRelationalQuery<
 				table: this.table,
 				tableConfig: this.tableConfig,
 				queryConfig: this.config,
-				tableAlias: this.tableConfig.tsName,
+				tableAlias: this.table[IsAlias] ? this.tableConfig.tsName : undefined, 
 			})
 			: this.dialect.buildRelationalQuery({
 				fullSchema: this.fullSchema,

@@ -1,4 +1,4 @@
-import { aliasedTable, aliasedTableColumn, mapColumnsInAliasedSQLToAlias, mapColumnsInSQLToAlias } from '~/alias.ts';
+import { aliasedTable, aliasedTableColumn, mapColumnsInAliasedSQLToAlias, mapColumnsInSQLToAlias, maybeAliasedTable, maybeAliasedTableColumn, maybeMapColumnsInAliasedSQLToAlias, maybeMapColumnsInSQLToAlias } from '~/alias.ts';
 import { Column } from '~/column.ts';
 import { entityKind, is } from '~/entity.ts';
 import type { MigrationConfig, MigrationMeta } from '~/migrator.ts';
@@ -14,7 +14,7 @@ import {
 	type TableRelationalConfig,
 	type TablesRelationalConfig,
 } from '~/relations.ts';
-import { Param, type QueryWithTypings, SQL, sql, type SQLChunk, View } from '~/sql/sql.ts';
+import { Param, type QueryWithTypings, SQL, sql, type SQLChunk, View, Placeholder } from '~/sql/sql.ts';
 import { Subquery, SubqueryConfig } from '~/subquery.ts';
 import { getTableName, Table } from '~/table.ts';
 import { orderSelectedFields, type UpdateSet } from '~/utils.ts';
@@ -527,8 +527,8 @@ export class MySqlDialect {
 						? selectedColumns.filter((c) => config.columns?.[c] === true)
 						: Object.keys(tableConfig.columns).filter((key) => !selectedColumns.includes(key));
 				}
-			} else {
-				// Select all columns if selection is not specified
+			} else if (!config.with) {
+				// Select all columns if selection or with are not specified
 				selectedColumns = Object.keys(tableConfig.columns);
 			}
 
@@ -768,12 +768,13 @@ export class MySqlDialect {
 		table: MySqlTable;
 		tableConfig: TableRelationalConfig;
 		queryConfig: true | DBQueryConfig<'many', true>;
-		tableAlias: string;
+		tableAlias?: string;
 		nestedQueryRelation?: Relation;
 		joinOn?: SQL;
 	}): BuildRelationalQueryResult<MySqlTable, MySqlColumn> {
 		let selection: BuildRelationalQueryResult<MySqlTable, MySqlColumn>['selection'] = [];
-		let limit, offset, orderBy: MySqlSelectConfig['orderBy'] = [], where;
+		let limit, offset, orderBy: MySqlSelectConfig['orderBy'] = [], where; 
+		const joins: MySqlSelectJoinConfig[] = [];
 
 		if (config === true) {
 			const selectionEntries = Object.entries(tableConfig.columns);
@@ -782,21 +783,21 @@ export class MySqlDialect {
 			) => ({
 				dbKey: value.name,
 				tsKey: key,
-				field: aliasedTableColumn(value as MySqlColumn, tableAlias),
+				field: maybeAliasedTableColumn(value as MySqlColumn, tableAlias),
 				relationTableTsKey: undefined,
 				isJson: false,
 				selection: [],
 			}));
 		} else {
 			const aliasedColumns = Object.fromEntries(
-				Object.entries(tableConfig.columns).map(([key, value]) => [key, aliasedTableColumn(value, tableAlias)]),
+				Object.entries(tableConfig.columns).map(([key, value]) => [key, maybeAliasedTableColumn(value, tableAlias)]),
 			);
 
 			if (config.where) {
 				const whereSql = typeof config.where === 'function'
 					? config.where(aliasedColumns, getOperators())
 					: config.where;
-				where = whereSql && mapColumnsInSQLToAlias(whereSql, tableAlias);
+				where = whereSql && maybeMapColumnsInSQLToAlias(whereSql, tableAlias);
 			}
 
 			const fieldsSelection: { tsKey: string; value: MySqlColumn | SQL.Aliased }[] = [];
@@ -857,7 +858,7 @@ export class MySqlDialect {
 				for (const [tsKey, value] of Object.entries(extras)) {
 					fieldsSelection.push({
 						tsKey,
-						value: mapColumnsInAliasedSQLToAlias(value, tableAlias),
+						value: maybeMapColumnsInAliasedSQLToAlias(value, tableAlias),
 					});
 				}
 			}
@@ -868,7 +869,7 @@ export class MySqlDialect {
 				selection.push({
 					dbKey: is(value, SQL.Aliased) ? value.fieldAlias : tableConfig.columns[tsKey]!.name,
 					tsKey,
-					field: is(value, Column) ? aliasedTableColumn(value, tableAlias) : value,
+					field: is(value, Column) ? maybeAliasedTableColumn(value, tableAlias) : value,
 					relationTableTsKey: undefined,
 					isJson: false,
 					selection: [],
@@ -883,9 +884,9 @@ export class MySqlDialect {
 			}
 			orderBy = orderByOrig.map((orderByValue) => {
 				if (is(orderByValue, Column)) {
-					return aliasedTableColumn(orderByValue, tableAlias) as MySqlColumn;
+					return maybeAliasedTableColumn(orderByValue, tableAlias) as MySqlColumn;
 				}
-				return mapColumnsInSQLToAlias(orderByValue, tableAlias);
+				return maybeMapColumnsInSQLToAlias(orderByValue, tableAlias);
 			});
 
 			limit = config.limit;
@@ -907,7 +908,7 @@ export class MySqlDialect {
 					...normalizedRelation.fields.map((field, i) =>
 						eq(
 							aliasedTableColumn(normalizedRelation.references[i]!, relationTableAlias),
-							aliasedTableColumn(field, tableAlias),
+							maybeAliasedTableColumn(field, tableAlias),
 						)
 					),
 				);
@@ -938,7 +939,21 @@ export class MySqlDialect {
 					relationTableTsKey: relationTableTsName,
 					isJson: true,
 					selection: builtRelation.selection,
+					joinKeys: normalizedRelation.fields.map((field) => maybeAliasedTableColumn(field, tableAlias).getSQL()),
 				});
+			}
+
+			// Add any joins
+			if (config.joins) {
+				for (const join of config.joins) {
+					joins.push({
+						on: join.on as SQL | undefined,
+						table: join.table as MySqlTable,
+						alias: undefined,
+						joinType: join.type,
+						lateral: false,
+					});
+				}
 			}
 		}
 
@@ -978,7 +993,7 @@ export class MySqlDialect {
 
 			if (needsSubquery) {
 				result = this.buildSelectQuery({
-					table: aliasedTable(table, tableAlias),
+					table: maybeAliasedTable(table, tableAlias),
 					fields: {},
 					fieldsFlat: [
 						{
@@ -1003,34 +1018,36 @@ export class MySqlDialect {
 				offset = undefined;
 				orderBy = undefined;
 			} else {
-				result = aliasedTable(table, tableAlias);
+				result = maybeAliasedTable(table, tableAlias);
 			}
 
 			result = this.buildSelectQuery({
-				table: is(result, MySqlTable) ? result : new Subquery(result, {}, tableAlias),
+				table: is(result, MySqlTable) ? result : tableAlias ? new Subquery(result, {}, tableAlias): result,
 				fields: {},
 				fieldsFlat: nestedSelection.map(({ field }) => ({
 					path: [],
-					field: is(field, Column) ? aliasedTableColumn(field, tableAlias) : field,
+					field: is(field, Column) ? maybeAliasedTableColumn(field, tableAlias) : field,
 				})),
 				where,
 				limit,
 				offset,
 				orderBy,
+				joins,
 				setOperators: [],
 			});
 		} else {
 			result = this.buildSelectQuery({
-				table: aliasedTable(table, tableAlias),
+				table: maybeAliasedTable(table, tableAlias),
 				fields: {},
 				fieldsFlat: selection.map(({ field }) => ({
 					path: [],
-					field: is(field, Column) ? aliasedTableColumn(field, tableAlias) : field,
+					field: is(field, Column) ? maybeAliasedTableColumn(field, tableAlias) : field,
 				})),
 				where,
 				limit,
 				offset,
 				orderBy,
+				joins,
 				setOperators: [],
 			});
 		}
