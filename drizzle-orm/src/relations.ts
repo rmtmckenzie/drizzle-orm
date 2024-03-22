@@ -27,8 +27,10 @@ import {
 	notLike,
 	or,
 } from './sql/expressions/index.ts';
-import { type Placeholder, SQL, sql } from './sql/sql.ts';
+import { type Placeholder, SQL, sql, type ColumnsSelection,type View } from './sql/sql.ts';
 import type { Assume, ColumnsWithTable, Equal, Simplify, ValueOrArray } from './utils.ts';
+import type { JoinType } from './query-builders/select.types.ts';
+import type { Subquery } from './subquery.ts';
 
 export abstract class Relation<TTableName extends string = string> {
 	static readonly [entityKind]: string = 'Relation';
@@ -212,6 +214,7 @@ export type DBQueryConfig<
 	TIsRoot extends boolean = boolean,
 	TSchema extends TablesRelationalConfig = TablesRelationalConfig,
 	TTableConfig extends TableRelationalConfig = TableRelationalConfig,
+	TSelection extends ColumnsSelection = ColumnsSelection,
 > =
 	& {
 		columns?: {
@@ -240,6 +243,15 @@ export type DBQueryConfig<
 				operators: { sql: Operators['sql'] },
 			) => Record<string, SQL.Aliased>);
 	}
+	& (TIsRoot extends true ? {
+		joins? : [
+			{
+				table: Table | Subquery | View | SQL,
+				on: ((aliases: TSelection) => SQL | undefined) | SQL,
+				type: JoinType,
+			}
+		]
+	}: {})
 	& (TRelationType extends 'many' ? 
 			& {
 				where?:
@@ -652,6 +664,7 @@ export interface BuildRelationalQueryResult<
 		isJson: boolean;
 		isExtra?: boolean;
 		selection: BuildRelationalQueryResult<TTable>['selection'];
+		joinKeys?: (TColumn | SQL | SQL.Aliased)[];
 	}[];
 	sql: TTable | SQL;
 }
