@@ -1,4 +1,13 @@
-import { aliasedTable, aliasedTableColumn, mapColumnsInAliasedSQLToAlias, mapColumnsInSQLToAlias, maybeAliasedTable, maybeAliasedTableColumn, maybeMapColumnsInAliasedSQLToAlias, maybeMapColumnsInSQLToAlias } from '~/alias.ts';
+import {
+	aliasedTable,
+	aliasedTableColumn,
+	mapColumnsInAliasedSQLToAlias,
+	mapColumnsInSQLToAlias,
+	maybeAliasedTable,
+	maybeAliasedTableColumn,
+	maybeMapColumnsInAliasedSQLToAlias,
+	maybeMapColumnsInSQLToAlias,
+} from '~/alias.ts';
 import { Column } from '~/column.ts';
 import { entityKind, is } from '~/entity.ts';
 import type { MigrationConfig, MigrationMeta } from '~/migrator.ts';
@@ -14,7 +23,7 @@ import {
 	type TableRelationalConfig,
 	type TablesRelationalConfig,
 } from '~/relations.ts';
-import { Param, type QueryWithTypings, SQL, sql, type SQLChunk, View, Placeholder } from '~/sql/sql.ts';
+import { Param, type QueryWithTypings, SQL, sql, type SQLChunk, View } from '~/sql/sql.ts';
 import { Subquery, SubqueryConfig } from '~/subquery.ts';
 import { getTableName, Table } from '~/table.ts';
 import { orderSelectedFields, type UpdateSet } from '~/utils.ts';
@@ -773,7 +782,7 @@ export class MySqlDialect {
 		joinOn?: SQL;
 	}): BuildRelationalQueryResult<MySqlTable, MySqlColumn> {
 		let selection: BuildRelationalQueryResult<MySqlTable, MySqlColumn>['selection'] = [];
-		let limit, offset, orderBy: MySqlSelectConfig['orderBy'] = [], where; 
+		let limit, offset, orderBy: MySqlSelectConfig['orderBy'] = [], where;
 		const joins: MySqlSelectJoinConfig[] = [];
 
 		if (config === true) {
@@ -1022,7 +1031,7 @@ export class MySqlDialect {
 			}
 
 			result = this.buildSelectQuery({
-				table: is(result, MySqlTable) ? result : tableAlias ? new Subquery(result, {}, tableAlias): result,
+				table: is(result, MySqlTable) ? result : tableAlias ? new Subquery(result, {}, tableAlias) : result,
 				fields: {},
 				fieldsFlat: nestedSelection.map(({ field }) => ({
 					path: [],

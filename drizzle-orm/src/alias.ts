@@ -116,7 +116,7 @@ export function aliasedTableColumn<T extends AnyColumn>(column: T, tableAlias: s
 }
 
 export function maybeMapColumnsInAliasedSQLToAlias(query: SQL.Aliased, alias: string | undefined): SQL.Aliased {
-	return alias ? mapColumnsInAliasedSQLToAlias(query, alias) : query; 
+	return alias ? mapColumnsInAliasedSQLToAlias(query, alias) : query;
 }
 
 export function maybeMapColumnsInSQLToAlias(query: SQL, alias: string | undefined): SQL {
