@@ -119,12 +119,12 @@ export function maybeMapColumnsInAliasedSQLToAlias(query: SQL.Aliased, alias: st
 	return alias ? mapColumnsInAliasedSQLToAlias(query, alias) : query;
 }
 
-export function maybeMapColumnsInSQLToAlias(query: SQL, alias: string | undefined): SQL {
-	return alias ? mapColumnsInSQLToAlias(query, alias) : query;
-}
-
 export function mapColumnsInAliasedSQLToAlias(query: SQL.Aliased, alias: string): SQL.Aliased {
 	return new SQL.Aliased(mapColumnsInSQLToAlias(query.sql, alias), query.fieldAlias);
+}
+
+export function maybeMapColumnsInSQLToAlias(query: SQL, alias: string | undefined): SQL {
+	return alias ? mapColumnsInSQLToAlias(query, alias) : query;
 }
 
 export function mapColumnsInSQLToAlias(query: SQL, alias: string): SQL {

@@ -1031,7 +1031,7 @@ export class MySqlDialect {
 			}
 
 			result = this.buildSelectQuery({
-				table: is(result, MySqlTable) ? result : tableAlias ? new Subquery(result, {}, tableAlias) : result,
+				table: is(result, MySqlTable) || !tableAlias ? result : new Subquery(result, {}, tableAlias),
 				fields: {},
 				fieldsFlat: nestedSelection.map(({ field }) => ({
 					path: [],
