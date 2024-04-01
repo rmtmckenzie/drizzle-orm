@@ -244,13 +244,11 @@ export type DBQueryConfig<
 			) => Record<string, SQL.Aliased>);
 	}
 	& (TIsRoot extends true ? {
-			joins?: [
-				{
-					table: Table | Subquery | View | SQL;
-					on: ((aliases: TSelection) => SQL | undefined) | SQL;
-					type: JoinType;
-				},
-			];
+			joins?: {
+				table: Table | Subquery | View | SQL;
+				on: ((aliases: TSelection) => SQL | undefined) | SQL;
+				type: JoinType;
+			}[];
 		}
 		: {})
 	& (TRelationType extends 'many' ? 
