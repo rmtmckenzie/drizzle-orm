@@ -10,7 +10,7 @@ import {
 } from '~/relations.ts';
 import type { RunnableQuery } from '~/runnable-query.ts';
 import type { Query, QueryWithTypings, SQL, SQLWrapper } from '~/sql/sql.ts';
-import { IsAlias } from '~/table.ts';
+// import { IsAlias } from '~/table.ts';
 import { tracer } from '~/tracing.ts';
 import type { KnownKeysOnly } from '~/utils.ts';
 import type { PgDialect } from '../dialect.ts';
@@ -122,7 +122,7 @@ export class PgRelationalQuery<TResult> extends QueryPromise<TResult>
 			table: this.table,
 			tableConfig: this.tableConfig,
 			queryConfig: this.config,
-			tableAlias: this.table[IsAlias] ? this.tableConfig.tsName : undefined,
+			tableAlias: undefined //this.table[IsAlias] ? this.tableConfig.tsName : undefined,
 		});
 	}
 
