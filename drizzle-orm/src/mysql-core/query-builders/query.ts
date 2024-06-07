@@ -9,6 +9,7 @@ import {
 	type TablesRelationalConfig,
 } from '~/relations.ts';
 import type { Query, QueryWithTypings, SQL } from '~/sql/sql.ts';
+import { IsAlias } from '~/table.ts';
 import type { KnownKeysOnly } from '~/utils.ts';
 import type { MySqlDialect } from '../dialect.ts';
 import type { Mode, MySqlSession, PreparedQueryConfig, PreparedQueryHKTBase, PreparedQueryKind } from '../session.ts';
@@ -114,7 +115,7 @@ export class MySqlRelationalQuery<
 				table: this.table,
 				tableConfig: this.tableConfig,
 				queryConfig: this.config,
-				tableAlias: this.tableConfig.tsName,
+				tableAlias: this.table[IsAlias] ? this.tableConfig.tsName : undefined,
 			})
 			: this.dialect.buildRelationalQuery({
 				fullSchema: this.fullSchema,

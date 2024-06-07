@@ -2,6 +2,7 @@ import { type AnyTable, type InferModelFromColumns, isTable, Table } from '~/tab
 import { type AnyColumn, Column } from './column.ts';
 import { entityKind, is } from './entity.ts';
 import { PrimaryKeyBuilder } from './pg-core/primary-keys.ts';
+import type { JoinType } from './query-builders/select.types.ts';
 import {
 	and,
 	asc,
@@ -27,7 +28,8 @@ import {
 	notLike,
 	or,
 } from './sql/expressions/index.ts';
-import { type Placeholder, SQL, sql } from './sql/sql.ts';
+import { type ColumnsSelection, type Placeholder, SQL, sql, type View } from './sql/sql.ts';
+import type { Subquery } from './subquery.ts';
 import type { Assume, ColumnsWithTable, Equal, Simplify, ValueOrArray } from './utils.ts';
 
 export abstract class Relation<TTableName extends string = string> {
@@ -212,6 +214,7 @@ export type DBQueryConfig<
 	TIsRoot extends boolean = boolean,
 	TSchema extends TablesRelationalConfig = TablesRelationalConfig,
 	TTableConfig extends TableRelationalConfig = TableRelationalConfig,
+	TSelection extends ColumnsSelection = ColumnsSelection,
 > =
 	& {
 		columns?: {
@@ -240,6 +243,14 @@ export type DBQueryConfig<
 				operators: { sql: Operators['sql'] },
 			) => Record<string, SQL.Aliased>);
 	}
+	& (TIsRoot extends true ? {
+			joins?: {
+				table: Table | Subquery | View | SQL;
+				on: ((aliases: TSelection) => SQL | undefined) | SQL;
+				type: JoinType;
+			}[];
+		}
+		: {})
 	& (TRelationType extends 'many' ? 
 			& {
 				where?:
@@ -652,6 +663,7 @@ export interface BuildRelationalQueryResult<
 		isJson: boolean;
 		isExtra?: boolean;
 		selection: BuildRelationalQueryResult<TTable>['selection'];
+		joinKeys?: (TColumn | SQL | SQL.Aliased)[];
 	}[];
 	sql: TTable | SQL;
 }
